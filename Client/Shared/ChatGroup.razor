@@ -1,0 +1,49 @@
+﻿@page "/{GroupName}"
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager NavigationManager
+
+<h1>@GroupName</h1>
+<div class="form-group">
+    <label>
+        User:
+        <input @bind="userInput" />
+    </label>
+</div>
+<div class="form-group">
+    <label>
+        Message:
+        <input type="text" @bind="messageInput" size="50" />
+    </label>
+</div>
+<button @onclick="Send" disabled="@(!IsConnected)">Send</button>
+
+<hr>
+
+<ul id="messagesList">
+    @if (Messages != null)
+    {
+        @foreach (var message in Messages)
+        {
+            <li>@message</li>
+        }
+    }
+</ul>
+
+@code {
+    private string userInput;
+    private string messageInput;
+
+    [Parameter]
+    public List<string>? Messages { get; set; }
+    [Parameter]
+    public string GroupName { get; set; }
+    [Parameter]
+    public HubConnection HubConnection { get; set; }
+
+
+    async Task Send() =>
+    await HubConnection.SendAsync("SendMessage", userInput, messageInput, GroupName);
+
+    public bool IsConnected =>
+        HubConnection?.State == HubConnectionState.Connected;
+}

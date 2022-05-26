@@ -1,0 +1,58 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager NavigationManager
+@implements IAsyncDisposable
+
+<div class="top-row px-4">
+    <a href="http://blazor.net" target="_blank" class="ml-md-auto">About</a>
+    <button class="ml-md-auto" @onclick='() => setCurrentGroup("plants")'>Plants</button>
+    <button class="ml-md-auto" @onclick='() => setCurrentGroup("animals")'>Animals</button>
+</div>
+<ChatGroup GroupName=@CurrentGroup HubConnection=@HubConnection Messages=@getGroupMessages(CurrentGroup) />
+
+@code {
+    public HubConnection HubConnection;
+    public List<Tuple<string, string>> Messages = new List<Tuple<string, string>>();
+    public string CurrentGroup;
+
+    private string userInput;
+    private string messageInput;
+
+
+    private List<string> getGroupMessages(string groupName)
+    {
+        return Messages?.Where(m => m.Item1 == groupName)?.Select(m => m.Item2)?.ToList();
+
+    }
+
+    private void setCurrentGroup(string groupName)
+    {
+        CurrentGroup = groupName;
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        HubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/chathub"))
+            .Build();
+
+        HubConnection.On<string, string, string>("ReceiveMessage", (user, message, groupName) =>
+        {
+            var encodedMsg = $"{user}: {message}";
+            Messages.Add(Tuple.Create(groupName, encodedMsg));
+            StateHasChanged();
+        });
+
+        await HubConnection.StartAsync();
+    }
+
+
+    public async ValueTask DisposeAsync()
+    {
+        if (HubConnection is not null)
+        {
+            await HubConnection.DisposeAsync();
+        }
+    }
+}

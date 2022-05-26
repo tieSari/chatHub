@@ -1,19 +1,35 @@
 ﻿@page "/"
+@page "/{home:bool}"
 @using Microsoft.AspNetCore.SignalR.Client
 @inject NavigationManager NavigationManager
 @implements IAsyncDisposable
 
 <div class="top-row px-4">
-    <a href="http://blazor.net" target="_blank" class="ml-md-auto">About</a>
-    <button class="ml-md-auto" @onclick='() => setCurrentGroup("plants")'>Plants</button>
-    <button class="ml-md-auto" @onclick='() => setCurrentGroup("animals")'>Animals</button>
+    <a href="" class="ml-md-auto btn-link" @onclick='() => setCurrentGroup("mammals")'>Mammals</a>
+    <a href="" class="ml-md-auto btn-link" @onclick='() => setCurrentGroup("reptiles")'>Reptiles</a>
+    <a href="" class="ml-md-auto btn-link" @onclick='() => setCurrentGroup("birds")'>Birds</a>
+    <a href="" class="ml-md-auto btn-link" @onclick='() => setCurrentGroup("insects")'>Insects</a>
+    <a href="" class="ml-md-auto btn-link" @onclick='() => setCurrentGroup("plants")'>Plants</a>
+    <a href="" class="ml-md-auto btn-link" @onclick='() => setCurrentGroup("mushrooms")'>Mushrooms</a>
+    <a href="" class="ml-md-auto btn-link" @onclick='() => setCurrentGroup("environment")'>Environment</a>
 </div>
-<ChatGroup GroupName=@CurrentGroup HubConnection=@HubConnection Messages=@getGroupMessages(CurrentGroup) />
+@if (CurrentGroup == null || Home == true)
+{
+    <h3 class="mt-4">Welcome to Sari's nature related chat service!</h3>
+    Home = false;
+}
+else
+{
+    <ChatGroup GroupName=@CurrentGroup HubConnection=@HubConnection Messages=@getGroupMessages(CurrentGroup) />
+}
 
 @code {
     public HubConnection HubConnection;
     public List<Tuple<string, string>> Messages = new List<Tuple<string, string>>();
     public string CurrentGroup;
+
+    [Parameter]
+    public Boolean Home { get; set; }
 
     private string userInput;
     private string messageInput;

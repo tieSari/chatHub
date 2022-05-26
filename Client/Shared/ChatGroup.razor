@@ -2,20 +2,16 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @inject NavigationManager NavigationManager
 
-<h1>@GroupName</h1>
+<h1 class="mt-4 mb-4">@GroupName</h1>
 <div class="form-group">
-    <label>
-        User:
-        <input @bind="userInput" />
-    </label>
+    <div>User:</div>
+    <input @bind="userInput" size="40" />
 </div>
 <div class="form-group">
-    <label>
-        Message:
-        <input type="text" @bind="messageInput" size="50" />
-    </label>
+    <div>Message:</div>
+    <textarea @bind="messageInput" rows="5" />
 </div>
-<button @onclick="Send" disabled="@(!IsConnected)">Send</button>
+<button class="btn-primary" @onclick="Send" disabled="@(!IsConnected)">Send</button>
 
 <hr>
 
@@ -40,9 +36,14 @@
     [Parameter]
     public HubConnection HubConnection { get; set; }
 
+    protected override void OnParametersSet()
+    {
+        messageInput = null;
+    }
+
 
     async Task Send() =>
-    await HubConnection.SendAsync("SendMessage", userInput, messageInput, GroupName);
+await HubConnection.SendAsync("SendMessage", userInput, messageInput, GroupName);
 
     public bool IsConnected =>
         HubConnection?.State == HubConnectionState.Connected;

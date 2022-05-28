@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using SarinDemoChatti.Server.Services;
+using SarinDemoChatti.Shared.Models;
 
 namespace SarinDemoChatti.Server.Hubs
 {
@@ -11,12 +12,12 @@ namespace SarinDemoChatti.Server.Hubs
         {
             this.dataService = dataService;
         }
-        public async Task SendMessage(string user, string message, string groupName)
+        public async Task SendMessage(MessageInfo messageInfo)
         {
-            if (user != null && message != null && groupName != null)
+            if (messageInfo.UserName != null && messageInfo.Message != null && messageInfo.GroupName != null)
             {
-                await Clients.All.SendAsync("ReceiveMessage", user, message, groupName);
-                dataService.SaveMessage(message, user, groupName);
+                await Clients.All.SendAsync("ReceiveMessage", messageInfo);
+                dataService.SaveMessage(messageInfo);
 
             }
         }

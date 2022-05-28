@@ -1,74 +1,85 @@
 ﻿@page "/"
 @page "/{home:bool}"
 @using Microsoft.AspNetCore.SignalR.Client
+@using SarinDemoChatti.Shared.Models
 @inject NavigationManager NavigationManager
 @implements IAsyncDisposable
 
-<div class="top-row px-4">
-    <a href="" class="ml-md-auto btn-link" @onclick='() => setCurrentGroup("mammals")'>Mammals</a>
-    <a href="" class="ml-md-auto btn-link" @onclick='() => setCurrentGroup("reptiles")'>Reptiles</a>
-    <a href="" class="ml-md-auto btn-link" @onclick='() => setCurrentGroup("birds")'>Birds</a>
-    <a href="" class="ml-md-auto btn-link" @onclick='() => setCurrentGroup("insects")'>Insects</a>
-    <a href="" class="ml-md-auto btn-link" @onclick='() => setCurrentGroup("plants")'>Plants</a>
-    <a href="" class="ml-md-auto btn-link" @onclick='() => setCurrentGroup("mushrooms")'>Mushrooms</a>
-    <a href="" class="ml-md-auto btn-link" @onclick='() => setCurrentGroup("environment")'>Environment</a>
+<div class="top-row px-4 mb-4">
+    @foreach (var group in messageGroups)
+    {
+        <a href="" class="ml-md-auto btn-link" @onclick='() => setCurrentGroup(group.Key)'>
+            @group.Key
+            @{
+                if (group.Value > 0)
+                {
+                    <span class="circle">@group.Value</span>
+                }
+            }
+        </a>
+    }
 </div>
-@if (CurrentGroup == null || Home == true)
+
+@if (currentGroup == null || Home == true)
 {
     <h3 class="mt-4">Welcome to Sari's nature related chat service!</h3>
     Home = false;
 }
 else
 {
-    <ChatGroup GroupName=@CurrentGroup HubConnection=@HubConnection Messages=@getGroupMessages(CurrentGroup) />
+    <ChatGroup GroupName=@currentGroup HubConnection=@hubConnection GroupMessages=@getGroupMessages(currentGroup) />
 }
 
 @code {
-    public HubConnection HubConnection;
-    public List<Tuple<string, string>> Messages = new List<Tuple<string, string>>();
-    public string CurrentGroup;
+    private HubConnection? hubConnection;
+    private List<MessageInfo> receivedMessages = new List<MessageInfo>();
+    private string? currentGroup;
+
+    private Dictionary<string, int> messageGroups = new Dictionary<string, int> {
+        { "Mammals", 0 }, { "Reptiles", 0 }, { "Birds", 0 }, { "Insects", 0 }, { "Plants", 0 }, { "Mushrooms", 0 }, { "Environment", 0 }};
 
     [Parameter]
     public Boolean Home { get; set; }
 
-    private string userInput;
-    private string messageInput;
 
-
-    private List<string> getGroupMessages(string groupName)
+    private List<MessageInfo>? getGroupMessages(string groupName)
     {
-        return Messages?.Where(m => m.Item1 == groupName)?.Select(m => m.Item2)?.ToList();
+        return receivedMessages?.Where(m => m.GroupName == groupName).ToList();
 
     }
 
     private void setCurrentGroup(string groupName)
     {
-        CurrentGroup = groupName;
+        currentGroup = groupName;
+        messageGroups[currentGroup] = 0;
 
     }
 
     protected override async Task OnInitializedAsync()
     {
-        HubConnection = new HubConnectionBuilder()
+        hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/chathub"))
             .Build();
 
-        HubConnection.On<string, string, string>("ReceiveMessage", (user, message, groupName) =>
+        hubConnection.On<MessageInfo>("ReceiveMessage", (messageInfo) =>
         {
-            var encodedMsg = $"{user}: {message}";
-            Messages.Add(Tuple.Create(groupName, encodedMsg));
+            receivedMessages.Add(messageInfo);
+            if (currentGroup != messageInfo.GroupName)
+            {
+                messageGroups[messageInfo.GroupName]++;
+            }
             StateHasChanged();
         });
 
-        await HubConnection.StartAsync();
+        await hubConnection.StartAsync();
     }
 
 
     public async ValueTask DisposeAsync()
     {
-        if (HubConnection is not null)
+        if (hubConnection is not null)
         {
-            await HubConnection.DisposeAsync();
+            await hubConnection.DisposeAsync();
         }
     }
 }

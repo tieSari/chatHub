@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+	  <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,10 +12,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Client\SarinDemoChatti.Client.csproj" />
     <ProjectReference Include="..\Shared\SarinDemoChatti.Shared.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controllers\" />
   </ItemGroup>
 
 

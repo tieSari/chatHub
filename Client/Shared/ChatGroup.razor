@@ -1,50 +1,66 @@
 ﻿@page "/{GroupName}"
 @using Microsoft.AspNetCore.SignalR.Client
+@using SarinDemoChatti.Shared.Models
 @inject NavigationManager NavigationManager
 
-<h1 class="mt-4 mb-4">@GroupName</h1>
-<div class="form-group">
-    <div>User:</div>
-    <input @bind="userInput" size="40" />
-</div>
-<div class="form-group">
-    <div>Message:</div>
-    <textarea @bind="messageInput" rows="5" />
-</div>
-<button class="btn-primary" @onclick="Send" disabled="@(!IsConnected)">Send</button>
+<EditForm Model="@messageInfo" OnValidSubmit="Send">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <h1 class="mt-4 mb-4">@GroupName</h1>
+    <div class="form-group">
+        <div>User:</div>
+        <InputText id="userName" @bind-Value="messageInfo.UserName" size="30" />
+    </div>
+    <div class="form-group">
+        <div>Message:</div>
+        <InputTextArea @bind-Value="messageInfo.Message" rows="5" />
+    </div>
+
+    <button type="submit" disabled="@(!isConnected || !isFormvalid)" class="bg-primary text-white rounded">Submit</button>
+</EditForm>
 
 <hr>
 
 <ul id="messagesList">
-    @if (Messages != null)
+    @if (GroupMessages != null)
     {
-        @foreach (var message in Messages)
+        @foreach (var messageInfo in GroupMessages)
         {
-            <li>@message</li>
+            var encodedMsg = $"{messageInfo.UserName}: {messageInfo.Message}";
+            <li>@encodedMsg</li>
         }
     }
 </ul>
 
 @code {
-    private string userInput;
-    private string messageInput;
 
     [Parameter]
-    public List<string>? Messages { get; set; }
+    public List<MessageInfo>? GroupMessages { get; set; }
     [Parameter]
-    public string GroupName { get; set; }
+    public string? GroupName { get; set; }
     [Parameter]
-    public HubConnection HubConnection { get; set; }
+    public HubConnection? HubConnection { get; set; }
+
+    private MessageInfo messageInfo = new();
+    private EditContext? editContext;
+
+    protected override void OnInitialized()
+    {
+        editContext = new(messageInfo);
+    }
 
     protected override void OnParametersSet()
     {
-        messageInput = null;
+        messageInfo.GroupName = GroupName;
+        messageInfo.Message = null;
     }
 
+    bool isFormvalid => editContext != null && editContext.Validate();
+
+    bool isConnected =>
+    HubConnection?.State == HubConnectionState.Connected;
 
     async Task Send() =>
-await HubConnection.SendAsync("SendMessage", userInput, messageInput, GroupName);
+await HubConnection.SendAsync("SendMessage", messageInfo);
 
-    public bool IsConnected =>
-        HubConnection?.State == HubConnectionState.Connected;
 }
